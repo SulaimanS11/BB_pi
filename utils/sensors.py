@@ -1,15 +1,16 @@
-import smbus2
-import math
-
-def read_compass():
-    # Replace this function with actual sensor reading logic
-    # Example placeholder returning a fixed heading (in degrees)
-    heading_degrees = 90  # East
-    return heading_degrees
-
-def get_direction():
-    heading_degrees = read_compass()
-    directions = ["North", "North-East", "East", "South-East",
-                  "South", "South-West", "West", "North-West"]
-    idx = round(heading_degrees / 45) % 8
-    return directions[idx]
+def get_direction_from_bbox(x_center, frame_width):
+    """
+    Determines relative direction based on object's x-coordinate in the frame.
+    Args:
+        x_center: Center X coordinate of detected object (bounding box).
+        frame_width: Width of the camera frame.
+    Returns:
+        Direction as a string (e.g., "Left", "Center", "Right").
+    """
+    third = frame_width / 3
+    if x_center < third:
+        return "Left"
+    elif x_center < 2 * third:
+        return "Center"
+    else:
+        return "Right"
