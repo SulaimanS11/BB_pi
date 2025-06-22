@@ -1,29 +1,65 @@
 import google.generativeai as genai
-from ki import ki
+import os
 
-API_KEY = ki
-genai.configure(api_key=API_KEY)
-
-def gemini_detect(pil_image):
+def initialize_gemini():
+    """Initialize Gemini API with API key"""
+    # First try to import from ki.py
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash')  # Updated model name
-        response = model.generate_content([
-            "Identify dangerous animals or plants in this image, and state their positions clearly as 'left', 'center', or 'right'. Only respond if you see: bear, snake, wolf, poison ivy, or poison oak.", 
-            pil_image
-        ])
-        result = response.text.lower()
-        positions = ["left", "center", "right"]
-        dangers = ["bear", "snake", "wolf", "poison ivy", "poison oak"]
+        from ki import ki
+        API_KEY = ki
+    except ImportError:
+        # If ki.py doesn't exist, try environment variable
+        API_KEY = os.environ.get('GEMINI_API_KEY')
+        if not API_KEY:
+            raise ValueError("No API key found. Please create ki.py with 'ki = \"your-api-key\"' or set GEMINI_API_KEY environment variable")
+    
+    genai.configure(api_key=API_KEY)
+    return genai.GenerativeModel('gemini-1.5-flash')
+
+def gemini_detect(model, pil_image):
+    """Detect dangers in image using Gemini API"""
+    try:
+        # Craft a specific prompt for better detection
+        prompt = """Analyze this image carefully for dangerous wildlife or plants.
         
-        for danger in dangers:
+        Look for:
+        - Dangerous animals: bear, snake, wolf, wild boar, cougar, mountain lion, venomous spiders
+        - Dangerous plants: poison ivy, poison oak, stinging nettle, giant hogweed
+        
+        If you detect any of these, respond with:
+        1. The name of the danger
+        2. Its position in the image (left, center, or right)
+        
+        Format: "[danger name] detected on the [position]"
+        
+        If no dangers are present, respond with "No dangers detected"
+        
+        Be specific and only identify if you're confident."""
+        
+        response = model.generate_content([prompt, pil_image])
+        result = response.text.lower()
+        
+        print(f"Gemini response: {result}")  # Debug output
+        
+        # Parse response for dangers and positions
+        positions = ["left", "center", "right"]
+        all_dangers = list(dangerous_animals.keys()) + list(dangerous_plants.keys())
+        
+        for danger in all_dangers:
             if danger in result:
                 for pos in positions:
                     if pos in result:
-                        # Return danger and approximate position based on Gemini description
-                        x_center = {"left": 0.15, "center": 0.5, "right": 0.85}[pos]
-                        bbox = (x_center - 0.05, 0, x_center + 0.05, 1)  # Mock bounding-box
+                        # Create approximate bounding box based on position
+                        x_positions = {"left": 0.25, "center": 0.5, "right": 0.75}
+                        x_center = x_positions.get(pos, 0.5)
+                        
+                        # Return danger and position info
+                        bbox = (x_center - 0.15, 0.3, x_center + 0.15, 0.7)
                         return danger, bbox
+        
         return None, None
+        
     except Exception as e:
         print(f"Gemini detection error: {e}")
         return None, None
+

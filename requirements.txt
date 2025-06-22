@@ -4,3 +4,4 @@ google-generativeai
 numpy
 tensorflow
 smbus2
+picamera2
