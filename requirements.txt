@@ -2,4 +2,5 @@ opencv-python
 pyttsx3
 google-generativeai
 numpy
+tensorflow
 smbus2

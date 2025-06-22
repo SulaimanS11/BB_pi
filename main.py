@@ -3,19 +3,26 @@ import alerts
 import danger_classes
 import gemini_api
 import utils.sensors as sensors
-import cv2
+import time
+import numpy as np
 
 def main():
     cam = camera.Camera()
+    print("Camera initialized. Starting danger detection...")
+    
     try:
         while True:
-            frame = cam.get_frame()
-            if frame is None:
+            # Get PIL image for Gemini API
+            pil_image = cam.get_pil_image()
+            if pil_image is None:
                 continue
 
-            frame_height, frame_width = frame.shape[:2]
+            # Get frame dimensions for direction calculation
+            frame_width = pil_image.width
+            frame_height = pil_image.height
 
-            danger, bbox = gemini_api.gemini_detect(frame)  # Update gemini_api.py to return bbox if possible
+            # Detect dangers using Gemini
+            danger, bbox = gemini_api.gemini_detect(pil_image)
 
             if danger and bbox:
                 x_min, y_min, x_max, y_max = bbox
@@ -24,13 +31,17 @@ def main():
                 direction = sensors.get_direction_from_bbox(x_center, frame_width)
                 action = danger_classes.get_safety_action(danger)
                 alerts.alert_user(danger, direction, action)
+                
+                # Wait a bit before next detection to avoid spam
+                time.sleep(2)
 
-            cv2.imshow("Danger Detector", frame)
-            if cv2.waitKey(1) == ord('q'):
-                break
+            # Small delay to prevent excessive API calls
+            time.sleep(0.5)
+            
+    except KeyboardInterrupt:
+        print("\nShutting down...")
     finally:
         cam.release()
-        cv2.destroyAllWindows()
 
 if __name__ == "__main__":
     main()

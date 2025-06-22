@@ -4,13 +4,17 @@ from ki import ki
 API_KEY = ki
 genai.configure(api_key=API_KEY)
 
-def gemini_detect(frame):
+def gemini_detect(pil_image):
     try:
-        model = genai.GenerativeModel('gemini-pro-vision')
-        response = model.generate_content(["Identify dangerous animals or plants in this image, and state their positions clearly as 'left', 'center', or 'right'.", frame])
+        model = genai.GenerativeModel('gemini-1.5-flash')  # Updated model name
+        response = model.generate_content([
+            "Identify dangerous animals or plants in this image, and state their positions clearly as 'left', 'center', or 'right'. Only respond if you see: bear, snake, wolf, poison ivy, or poison oak.", 
+            pil_image
+        ])
         result = response.text.lower()
         positions = ["left", "center", "right"]
         dangers = ["bear", "snake", "wolf", "poison ivy", "poison oak"]
+        
         for danger in dangers:
             if danger in result:
                 for pos in positions:
