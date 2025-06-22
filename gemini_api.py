@@ -1,5 +1,6 @@
 import google.generativeai as genai
 import os
+from danger_classes import dangerous_animals, dangerous_plants
 
 def initialize_gemini():
     """Initialize Gemini API with API key"""
@@ -62,4 +63,3 @@ def gemini_detect(model, pil_image):
     except Exception as e:
         print(f"Gemini detection error: {e}")
         return None, None
-
